@@ -112,8 +112,8 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$PLIST" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Set :NSAppTransportSecurity:NSAllowsArbitraryLoads true" "$PLIST" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Vault" "$PLIST" 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 用于把相册照片上传到你的 WebDAV，App 不会写入系统相册。" "$PLIST" 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription 用于把相册照片上传到你的 WebDAV，App 不会写入系统相册。" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 用于把相册照片和视频上传到你的 WebDAV，App 不会写入系统相册。" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription 用于把相册照片和视频上传到你的 WebDAV，App 不会写入系统相册。" "$PLIST" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :NSLocalNetworkUsageDescription string Vault 需要访问局域网来连接你自己的 WebDAV / OpenList 服务器。" "$PLIST" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Set :NSLocalNetworkUsageDescription Vault 需要访问局域网来连接你自己的 WebDAV / OpenList 服务器。" "$PLIST" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :UIFileSharingEnabled bool false" "$PLIST" 2>/dev/null || true

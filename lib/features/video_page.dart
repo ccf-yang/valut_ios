@@ -13,6 +13,20 @@ import '../core/theme.dart';
 import '../core/widgets.dart';
 import '../state/browse_providers.dart';
 import '../state/session_providers.dart';
+import 'mpv_video_page.dart';
+
+/// 打开视频：Apple 原生容器（mp4 / mov / m4v / 3gp / ts）走这里已真机验证的 AVPlayer 路径，
+/// mkv / webm / avi / flv / wmv 这些系统连解封装都不支持的容器走 [MpvVideoPage]。
+/// 三个入口（浏览、分类、压缩包）都调它，免得漏一个就又变成打不开的 mkv。
+void openVideo(BuildContext context, RemoteEntry entry, {File? localFile}) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => entry.needsMpvPlayback
+          ? MpvVideoPage(entry: entry, localFile: localFile)
+          : VideoPage(entry: entry, localFile: localFile),
+    ),
+  );
+}
 
 /// HTML 04（旧版）：视频播放器。
 ///

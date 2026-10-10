@@ -290,7 +290,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
     if (kind == FileKind.image) {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => _ExtractedImageView(entry: synthetic, file: file)));
     } else {
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => VideoPage(entry: synthetic, localFile: file)));
+      openVideo(context, synthetic, localFile: file);
     }
   }
 }

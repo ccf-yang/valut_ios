@@ -65,7 +65,7 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
           MaterialPageRoute(builder: (_) => ImageViewerPage(images: images, initialIndex: index)),
         );
       case FileKind.video:
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => VideoPage(entry: entry)));
+        openVideo(context, entry);
       case FileKind.audio:
         final audios = ref.read(dirAudiosProvider(_path));
         final index = audios.indexWhere((e) => e.path == entry.path);

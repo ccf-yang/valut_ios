@@ -274,15 +274,21 @@ class UploadController extends Notifier<UploadState> {
       }
       final asset = byId[task.localAssetId]!;
       task.status = UploadStatus.running;
+      final isVideo = asset.type == AssetType.video;
+      task.note = isVideo ? '正在取原片，iCloud 上的视频要先整段拉回本机' : null;
       _notify();
       File? scratch;
       try {
         final origin = await asset.originFile;
         if (origin == null || !await origin.exists()) {
-          throw WebDavError(WebDavErrorKind.notFound, detail: '原文件不可读');
+          throw WebDavError(
+            WebDavErrorKind.notFound,
+            detail: '相册里这份原文件取不出来（iCloud 还没下载，或相册权限只给了部分项目）',
+          );
         }
+        task.note = null;
         final name = _fileNameFor(asset, origin);
-        final ext = name.contains('.') ? name.substring(name.lastIndexOf('.') + 1).toLowerCase() : 'jpg';
+        final ext = name.contains('.') ? name.substring(name.lastIndexOf('.') + 1).toLowerCase() : (isVideo ? 'mp4' : 'jpg');
         task.fileName = name;
         // 先导出到 App 沙盒临时目录，传完立刻删（需求 §3.6 / §5.3）。
         scratch = await cache.fileFor(
@@ -362,7 +368,8 @@ class UploadController extends Notifier<UploadState> {
     final title = (asset.title ?? '').trim();
     if (title.isNotEmpty && title.contains('.')) return title;
     final base = title.isEmpty ? asset.id.substring(0, 8) : title;
-    final originExt = origin.path.contains('.') ? origin.path.substring(origin.path.lastIndexOf('.') + 1) : 'jpg';
+    final fallback = asset.type == AssetType.video ? 'mov' : 'jpg';
+    final originExt = origin.path.contains('.') ? origin.path.substring(origin.path.lastIndexOf('.') + 1) : fallback;
     return '$base.${originExt.toLowerCase()}';
   }
 }

@@ -51,7 +51,7 @@ class _UploadPageState extends ConsumerState<UploadPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('选中最近 $chosen 天拍摄的照片', style: TextStyle(fontSize: 12.5, color: VaultColors.muted)),
+                Text('选中最近 $chosen 天的照片和视频', style: TextStyle(fontSize: 12.5, color: VaultColors.muted)),
                 const SizedBox(height: 12),
                 Slider(
                   value: chosen.toDouble(),
@@ -186,6 +186,15 @@ class _UploadPageState extends ConsumerState<UploadPage> {
     );
   }
 
+  /// 「今天全部」到底带不带视频，只看数字判断不出来 —— 相册权限里照片和视频是一起给的，
+  /// 所以分桶标题直接把两类各几个写清楚。
+  static String _bucketSummary(List<AssetEntity> assets) {
+    final videos = assets.where((a) => a.type == AssetType.video).length;
+    if (videos == 0) return '${assets.length} 项';
+    if (videos == assets.length) return '$videos 个视频';
+    return '${assets.length - videos} 张照片 · $videos 个视频';
+  }
+
   Widget _assets(UploadState state, UploadController controller) {
     if (state.loading) {
       return Center(
@@ -206,7 +215,7 @@ class _UploadPageState extends ConsumerState<UploadPage> {
               VIcon('image', size: 28, color: VaultColors.chevron),
               const SizedBox(height: 14),
               Text(
-                '没有相册读取权限，无法选择要上传的照片。',
+                '没有相册读取权限，无法选择要上传的照片和视频。',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: VaultColors.muted, height: 1.6),
               ),
@@ -243,7 +252,7 @@ class _UploadPageState extends ConsumerState<UploadPage> {
               child: Row(
                 children: [
                   Expanded(child: Text(formatDayLabel(bucket.day), style: const TextStyle(fontSize: 12.5, color: Color(0xFFB9BEC6)))),
-                  Text('${bucket.assets.length} 项', style: TextStyle(fontSize: 11, color: VaultColors.dim)),
+                  Text(_bucketSummary(bucket.assets), style: TextStyle(fontSize: 11, color: VaultColors.dim)),
                   const SizedBox(width: 8),
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -346,38 +355,42 @@ class _UploadPageState extends ConsumerState<UploadPage> {
             ),
           ),
           const SizedBox(height: 8),
-          for (final task in shown)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    switch (task.status) {
-                      UploadStatus.done => Icons.check_circle_outline_rounded,
-                      UploadStatus.failed => Icons.error_outline_rounded,
-                      UploadStatus.canceled => Icons.remove_circle_outline_rounded,
-                      _ => Icons.arrow_upward_rounded,
-                    },
-                    size: 13,
-                    color: switch (task.status) {
-                      UploadStatus.done => VaultColors.green,
-                      UploadStatus.failed => VaultColors.danger,
-                      UploadStatus.canceled => VaultColors.dim,
-                      _ => VaultColors.accent,
-                    },
-                  ),
-                  const SizedBox(width: 7),
-                  Expanded(
-                    child: Text(
-                      task.error != null ? '${task.fileName} · ${task.error}' : task.fileName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11, color: VaultColors.muted),
-                    ),
-                  ),
-                ],
-              ),
+          for (final task in shown) _queueRow(task),
+        ],
+      ),
+    );
+  }
+
+  Widget _queueRow(UploadTask task) {
+    final detail = task.error ?? task.note;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(
+            switch (task.status) {
+              UploadStatus.done => Icons.check_circle_outline_rounded,
+              UploadStatus.failed => Icons.error_outline_rounded,
+              UploadStatus.canceled => Icons.remove_circle_outline_rounded,
+              _ => Icons.arrow_upward_rounded,
+            },
+            size: 13,
+            color: switch (task.status) {
+              UploadStatus.done => VaultColors.green,
+              UploadStatus.failed => VaultColors.danger,
+              UploadStatus.canceled => VaultColors.dim,
+              _ => VaultColors.accent,
+            },
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              detail == null ? task.fileName : '${task.fileName} · $detail',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: task.error != null ? VaultColors.danger : VaultColors.muted),
             ),
+          ),
         ],
       ),
     );
@@ -443,6 +456,27 @@ class _Cell extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           _Thumb(asset: asset),
+          // 视频缩略图和照片长得一模一样，不标时长就没人确定「今天全部」里有没有它。
+          if (asset.type == AssetType.video)
+            Positioned(
+              left: 7,
+              bottom: 7,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.58),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Text(
+                  formatDuration(asset.videoDuration),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.white,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ),
           Positioned(
             top: 6,
             right: 6,

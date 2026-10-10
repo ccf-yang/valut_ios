@@ -105,6 +105,14 @@ class RemoteEntry {
     return FileKind.other;
   }
 
+  /// Apple 原生解码器（AVPlayer / AVFoundation）能解封装的视频容器。
+  /// 只有这些能用系统播放器放；其余容器系统连「打开」都过不去，得交给随包带的 libmpv。
+  bool get isNativePlayableVideo =>
+      kind == FileKind.video && const {'.mp4', '.mov', '.m4v', '.3gp', '.ts'}.contains(extension);
+
+  /// mkv / webm / avi / flv / wmv 这类：系统播放器解不了封装，走 libmpv 播放页。
+  bool get needsMpvPlayback => kind == FileKind.video && !isNativePlayableVideo;
+
   /// iOS 原生解码器放不了的音频容器：打开音频页就直接提示，不初始化播放器。
   bool get isIosUnsupportedAudio {
     if (kind != FileKind.audio) return false;
@@ -120,7 +128,11 @@ class RemoteEntry {
   }
 
   static const _imageExts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif', '.bmp', '.tiff', '.tif', '.avif'};
-  static const _videoExts = {'.mp4', '.mov', '.m4v', '.mkv', '.webm', '.avi', '.flv', '.wmv', '.ts', '.3gp'};
+  // rmvb / mpg / vob 这些老容器系统播放器同样解不了，但得先被认成视频才轮得到 libmpv。
+  static const _videoExts = {
+    '.mp4', '.mov', '.m4v', '.mkv', '.webm', '.avi', '.flv', '.wmv', '.ts', '.3gp',
+    '.rmvb', '.mpg', '.mpeg', '.m2ts', '.vob', '.ogv',
+  };
   static const _audioExts = {'.mp3', '.m4a', '.aac', '.wav', '.flac', '.ogg', '.oga', '.opus', '.wma', '.asf', '.aiff', '.aif', '.mka'};
   static const _archiveExts = {'.zip', '.rar', '.7z', '.tar', '.gz', '.tgz'};
   // 交给系统 QuickLook 预览的常见文档；认不出的类型 open_filex 会自动退回「用其他 App 打开」。
@@ -209,6 +221,7 @@ class UploadTask {
     this.status = UploadStatus.queued,
     this.progress = 0,
     this.error,
+    this.note,
   });
 
   final String localAssetId;
@@ -217,6 +230,10 @@ class UploadTask {
   UploadStatus status;
   double progress;
   String? error;
+
+  /// 取相册原片阶段的说明。iCloud 上的视频要先整段拉回本机才有字节可传，
+  /// 这几十秒进度一直是 0，不写一句会被当成卡死。
+  String? note;
 
   bool get isFinished => status == UploadStatus.done || status == UploadStatus.canceled;
 }

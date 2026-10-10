@@ -53,7 +53,7 @@ class _MediaFilterPageState extends ConsumerState<MediaFilterPage> {
           MaterialPageRoute(builder: (_) => ImageViewerPage(images: list, initialIndex: index)),
         );
       case FileKind.video:
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => VideoPage(entry: entry)));
+        openVideo(context, entry);
       case FileKind.audio:
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => AudioPlayerPage(playlist: list, initialIndex: index)),
