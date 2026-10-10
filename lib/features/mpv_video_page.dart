@@ -73,22 +73,24 @@ class _MpvVideoPageState extends ConsumerState<MpvVideoPage> {
 
   Future<void> _open() async {
     final local = widget.localFile ?? await _cachedFile();
-    await _play(local == null ? null : Uri.file(local.path).toString());
-    if (local != null) return;
+    if (local != null) {
+      await _play(Uri.file(local.path).toString());
+      return;
+    }
     // 流式优先：代理地址是 http://127.0.0.1:port/…，认证与 Range 都由它带。
     final url = await ref.read(proxyProvider).urlFor(widget.entry.path);
     await _play(url.toString());
   }
 
-  Future<void> _play(String? uri) async {
-    if (uri == null) {
-      _fail('拿不到播放地址。');
-      return;
-    }
+  Future<void> _play(String uri) async {
     try {
       await _player.open(Media(uri), play: true);
       if (!mounted) return;
-      setState(() => _loading = false);
+      // 退回整段下载后重新打开成功，之前流式那条错误要清掉，否则一直显示打不开。
+      setState(() {
+        _loading = false;
+        _error = null;
+      });
     } on Object catch (e) {
       if (widget.localFile == null && !_fallbackTried) {
         await _downloadAndPlay();
